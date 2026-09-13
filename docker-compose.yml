@@ -1,0 +1,35 @@
+services:
+  web:
+    build: .
+    container_name: expense-web
+    ports:
+      - "8080:5000"
+    environment:
+      DB_HOST: db
+      POSTGRES_DB: expenses
+      POSTGRES_USER: expenseuser
+      POSTGRES_PASSWORD: expensepass
+      SECRET_KEY: change-this-secret
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    container_name: expense-db
+    environment:
+      POSTGRES_DB: expenses
+      POSTGRES_USER: expenseuser
+      POSTGRES_PASSWORD: expensepass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U expenseuser -d expenses"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

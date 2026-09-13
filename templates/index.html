@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpendWise — Expense Tracker</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-icon">৳</div>
+      <div>
+        <h1>SpendWise</h1>
+        <span>Personal Expense Tracker</span>
+      </div>
+    </div>
+    <div class="docker-badge">🐳 Dockerized</div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">YOUR MONEY, YOUR CONTROL</p>
+        <h2>Track every taka.<br><span>Spend smarter.</span></h2>
+        <p class="hero-text">A simple real-life expense dashboard built with Flask, PostgreSQL and Docker Compose.</p>
+      </div>
+      <div class="hero-card">
+        <div class="mini-label">TOTAL SPENDING</div>
+        <div class="hero-total">৳ {{ "%.2f"|format(summary.total|float) }}</div>
+        <div class="mini-label">{{ summary.count }} recorded expenses</div>
+      </div>
+    </section>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <section class="stats">
+      <div class="stat-card">
+        <div class="stat-icon purple">৳</div>
+        <div><span>Total spent</span><strong>৳ {{ "%.2f"|format(summary.total|float) }}</strong></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue">#</div>
+        <div><span>Transactions</span><strong>{{ summary.count }}</strong></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">✓</div>
+        <div><span>System status</span><strong class="online">Online</strong></div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">QUICK ACTION</p>
+            <h3>Add an expense</h3>
+          </div>
+          <span class="plus">+</span>
+        </div>
+
+        <form action="{{ url_for('add_expense') }}" method="POST" class="expense-form">
+          <label>Expense name
+            <input name="title" type="text" placeholder="e.g. Grocery shopping" required>
+          </label>
+
+          <label>Category
+            <select name="category" required>
+              <option value="">Choose category</option>
+              <option>Food</option>
+              <option>Transport</option>
+              <option>Bills</option>
+              <option>Shopping</option>
+              <option>Education</option>
+              <option>Health</option>
+              <option>Entertainment</option>
+              <option>Other</option>
+            </select>
+          </label>
+
+          <div class="two-col">
+            <label>Amount (BDT)
+              <input name="amount" type="number" min="0.01" step="0.01" placeholder="0.00" required>
+            </label>
+            <label>Date
+              <input name="expense_date" type="date" value="{{ current_date or '' }}" required>
+            </label>
+          </div>
+
+          <button type="submit">Add expense <span>→</span></button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">BREAKDOWN</p>
+            <h3>By category</h3>
+          </div>
+        </div>
+
+        {% if categories %}
+          <div class="category-list">
+            {% set max_total = categories[0].total|float %}
+            {% for item in categories %}
+              {% set pct = ((item.total|float / max_total) * 100) if max_total else 0 %}
+              <div class="category-row">
+                <div class="cat-line">
+                  <span>{{ item.category }}</span>
+                  <strong>৳ {{ "%.2f"|format(item.total|float) }}</strong>
+                </div>
+                <div class="bar"><div style="width: {{ pct }}%"></div></div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="empty">No expenses yet.</p>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="panel table-panel">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">HISTORY</p>
+          <h3>Recent expenses</h3>
+        </div>
+        <span class="count-pill">{{ expenses|length }} shown</span>
+      </div>
+
+      {% if expenses %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Expense</th><th>Category</th><th>Date</th><th>Amount</th><th></th></tr>
+          </thead>
+          <tbody>
+          {% for expense in expenses %}
+            <tr>
+              <td class="expense-title"><span class="dot"></span>{{ expense.title }}</td>
+              <td><span class="tag">{{ expense.category }}</span></td>
+              <td>{{ expense.expense_date }}</td>
+              <td class="amount">৳ {{ "%.2f"|format(expense.amount|float) }}</td>
+              <td>
+                <form action="{{ url_for('delete_expense', expense_id=expense.id) }}" method="POST">
+                  <button class="delete-btn" title="Delete">×</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <p class="empty">No expenses recorded.</p>
+      {% endif %}
+    </section>
+
+    <footer>
+      <span>SpendWise</span> · Flask + PostgreSQL + Docker Compose
+    </footer>
+  </main>
+</body>
+</html>
