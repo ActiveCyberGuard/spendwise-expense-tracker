@@ -1,6 +1,8 @@
 
 import os
+
 from flask import Flask, flash, redirect, render_template, request, url_for
+
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
@@ -38,9 +40,11 @@ def get_connection():
 # =========================
 
 def init_db():
+
     conn = get_connection()
 
     try:
+
         with conn.cursor() as cur:
 
             cur.execute(
@@ -56,9 +60,11 @@ def init_db():
             )
 
             cur.execute("SELECT COUNT(*) FROM expenses;")
+
             count = cur.fetchone()[0]
 
             if count == 0:
+
                 sample_data = [
                     ("Lunch", "Food", 180),
                     ("Bus fare", "Transport", 60),
@@ -77,6 +83,7 @@ def init_db():
         conn.commit()
 
     finally:
+
         conn.close()
 
 
@@ -90,9 +97,11 @@ def index():
     conn = get_connection()
 
     try:
+
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
 
             # Total expense and number of expenses
+
             cur.execute(
                 """
                 SELECT
@@ -104,7 +113,9 @@ def index():
 
             summary = cur.fetchone()
 
+
             # Category summary
+
             cur.execute(
                 """
                 SELECT
@@ -118,7 +129,9 @@ def index():
 
             categories = cur.fetchall()
 
+
             # Expense list
+
             cur.execute(
                 """
                 SELECT
@@ -135,7 +148,9 @@ def index():
             expenses = cur.fetchall()
 
     finally:
+
         conn.close()
+
 
     return render_template(
         "index.html",
@@ -157,23 +172,38 @@ def add_expense():
     amount = request.form.get("amount", "").strip()
     expense_date = request.form.get("expense_date", "").strip()
 
+
     if not title or not category or not amount or not expense_date:
-        flash("Please fill in all fields.", "error")
+
+        flash(
+            "Please fill in all fields.",
+            "error"
+        )
+
         return redirect(url_for("index"))
 
+
     try:
+
         amount = float(amount)
 
         if amount <= 0:
             raise ValueError
 
     except ValueError:
-        flash("Amount must be a positive number.", "error")
+
+        flash(
+            "Amount must be a positive number.",
+            "error"
+        )
+
         return redirect(url_for("index"))
+
 
     conn = get_connection()
 
     try:
+
         with conn.cursor() as cur:
 
             cur.execute(
@@ -182,15 +212,25 @@ def add_expense():
                 (title, category, amount, expense_date)
                 VALUES (%s, %s, %s, %s);
                 """,
-                (title, category, amount, expense_date)
+                (
+                    title,
+                    category,
+                    amount,
+                    expense_date
+                )
             )
 
         conn.commit()
 
     finally:
+
         conn.close()
 
-    flash("Expense added successfully.", "success")
+
+    flash(
+        "Expense added successfully.",
+        "success"
+    )
 
     return redirect(url_for("index"))
 
@@ -199,12 +239,16 @@ def add_expense():
 # Delete Expense
 # =========================
 
-@app.route("/delete/<int:expense_id>", methods=["POST"])
+@app.route(
+    "/delete/<int:expense_id>",
+    methods=["POST"]
+)
 def delete_expense(expense_id):
 
     conn = get_connection()
 
     try:
+
         with conn.cursor() as cur:
 
             cur.execute(
@@ -215,9 +259,14 @@ def delete_expense(expense_id):
         conn.commit()
 
     finally:
+
         conn.close()
 
-    flash("Expense deleted successfully.", "success")
+
+    flash(
+        "Expense deleted successfully.",
+        "success"
+    )
 
     return redirect(url_for("index"))
 
@@ -230,10 +279,13 @@ def delete_expense(expense_id):
 def health():
 
     try:
+
         conn = get_connection()
 
         try:
+
             with conn.cursor() as cur:
+
                 cur.execute("SELECT 1;")
 
             return {
@@ -242,6 +294,7 @@ def health():
             }
 
         finally:
+
             conn.close()
 
     except Exception as error:
@@ -258,6 +311,10 @@ def health():
 # =========================
 
 if __name__ == "__main__":
+
+    # Create database table before starting Flask
+    init_db()
+
     app.run(
         host="0.0.0.0",
         port=5000,
